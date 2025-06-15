@@ -1,0 +1,37 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: plan-it-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=PlanIt123!
+      - MSSQL_PID=Express
+    ports:
+      - "1433:1433"
+    networks:
+      - plan-it-network
+    volumes:
+      - ./src/db/scripts/startup.sql:/db/init.sql
+      - ./entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+
+  plan-it-api:
+    build: .
+    container_name: plan-it-api
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/usr/src/app/data
+    networks:
+      - plan-it-network
+    depends_on:
+      - sqlserver
+    restart: unless-stopped
+
+networks:
+  plan-it-network:
+    driver: bridge
