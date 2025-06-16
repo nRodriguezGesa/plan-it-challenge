@@ -32,7 +32,7 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
       const parts = trimmedLine.split(this.fieldSeparator);
 
       if (parts.length < this.minimumFields) {
-        this.logger.warn(
+        Logger.warn(
           `Line has ${parts.length} fields, minimum required: ${this.minimumFields}. Line: ${line}`,
         );
         return null;
@@ -41,13 +41,13 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
       const [clientId, firstName, lastName, email, ageStr] = parts;
 
       if (!clientId?.trim() || !firstName?.trim() || !lastName?.trim()) {
-        this.logger.warn(`Missing required fields in line: ${line}`);
+        Logger.warn(`Missing required fields in line: ${line}`);
         return null;
       }
 
       const trimmedClientId = clientId.trim();
       if (!this.isValidClientId(trimmedClientId)) {
-        this.logger.warn(
+        Logger.warn(
           `Invalid client_id format '${trimmedClientId}'. Must be 6 digits. Line: ${line}`,
         );
         return null;
@@ -55,12 +55,12 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
 
       const cleanEmail = this.parseEmail(email);
       if (email && email.trim() && !cleanEmail) {
-        this.logger.warn(`Invalid email format '${email}' in line: ${line}`);
+        Logger.warn(`Invalid email format '${email}' in line: ${line}`);
       }
 
       const parsedAge = this.parseAge(ageStr);
       if (ageStr && ageStr.trim() && parsedAge === null) {
-        this.logger.warn(`Invalid age '${ageStr}' in line: ${line}`);
+        Logger.warn(`Invalid age '${ageStr}' in line: ${line}`);
       }
 
       return {
@@ -71,7 +71,7 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
         age: parsedAge,
       };
     } catch (error) {
-      this.logger.error(`Error parsing line: ${line}`, error);
+      Logger.error(`Error parsing line: ${line}`, error);
       return null;
     }
   }
@@ -110,13 +110,13 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
   }
 
   async processBatch(batch: Client[]): Promise<void> {
-    this.logger.log(`Processing batch of ${batch.length} clients`);
+    Logger.log(`Processing batch of ${batch.length} clients`);
 
     try {
       await this.clientRepository.batchInsert(batch);
-      this.logger.log(`Successfully inserted ${batch.length} clients`);
+      Logger.log(`Successfully inserted ${batch.length} clients`);
     } catch (error) {
-      this.logger.error(
+      Logger.error(
         `Failed to insert batch of ${batch.length} clients:`,
         error,
       );
@@ -133,7 +133,7 @@ export class ClientProcessorStrategy implements FileProcessorStrategy<Client> {
     );
 
     if (!isValid) {
-      this.logger.warn(`Data validation failed for: ${JSON.stringify(data)}`);
+      Logger.warn(`Data validation failed for: ${JSON.stringify(data)}`);
     }
 
     return isValid;

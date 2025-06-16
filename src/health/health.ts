@@ -43,7 +43,6 @@ export type MemoryHealthResponse = {
 
 export type ProcessingHealth = {
   isProcessing: boolean;
-  activeProcesses: number;
 };
 
 export class Health {

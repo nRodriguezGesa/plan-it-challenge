@@ -30,8 +30,12 @@ export class TypedEnvConfig {
         'CLIENT_FILE_MINUMUM_FIELDS',
         { infer: true },
       ),
-      MAX_FILE_SIZE: this.configService.get('MAX_FILE_SIZE', { infer: true }),
-
+      MAX_FILE_SIZE_GB: this.configService.get('MAX_FILE_SIZE_GB', {
+        infer: true,
+      }),
+      FILES_BASE_PATH: this.configService.get('FILES_BASE_PATH', {
+        infer: true,
+      }),
       DB_HOST: this.configService.get('DB_HOST', { infer: true }),
       DB_PORT: this.configService.get('DB_PORT', { infer: true }),
       DB_USERNAME: this.configService.get('DB_USERNAME', { infer: true }),
@@ -56,7 +60,8 @@ export class TypedEnvConfig {
       batchSize: this.config.BATCH_SIZE,
       separator: this.config.CLIENT_FILE_SEPARATOR,
       minimumFields: this.config.CLIENT_FILE_MINUMUM_FIELDS,
-      maxFileSize: this.config.MAX_FILE_SIZE,
+      maxFileSize: this.config.MAX_FILE_SIZE_GB,
+      filesBasePath: this.config.FILES_BASE_PATH,
     };
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientEntity } from './client.entity';
 import { Client } from './client';
+import { DatabaseError } from 'src/file-processor/fileProcessor.exceptions';
 
 @Injectable()
 export class ClientRepository {
@@ -12,9 +13,8 @@ export class ClientRepository {
   ) {}
 
   async batchInsert(clients: Client[]): Promise<void> {
-    const startTime = Date.now();
     try {
-      const clientEntities: ClientEntity[] = clients.map((client) =>
+      const clientEntities = clients.map((client) =>
         ClientEntity.fromClientData(client),
       );
       await this.repository
@@ -24,13 +24,14 @@ export class ClientRepository {
         .values(clientEntities)
         .orIgnore()
         .execute();
-      const duration = Date.now() - startTime;
-      Logger.log(
-        `Inserted ${clients.length} clients in ${duration} milliseconds`,
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Unknown database error';
+      Logger.error(`Database insert failed: ${message}`, error);
+      throw new DatabaseError(
+        `Failed to insert ${clients.length} clients`,
+        error as Error,
       );
-    } catch (error) {
-      Logger.error(`Error inserting clients: ${error}`);
-      throw error;
     }
   }
 }

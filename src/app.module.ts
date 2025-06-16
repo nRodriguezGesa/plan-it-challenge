@@ -28,7 +28,7 @@ import { ClientEntity } from './client/client.entity';
         entities: [ClientEntity],
         synchronize: false,
         options: {
-          encrypt: false, // Para desarrollo local
+          encrypt: false,
           trustServerCertificate: true,
         },
         logging: process.env.NODE_ENV === 'development',

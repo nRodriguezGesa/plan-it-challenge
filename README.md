@@ -21,78 +21,64 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+# Challenge NodeJS Plan IT
+## Instrucciones de instalacion
+### Prerequisitos
+-Docker y Docker Compose
+-NodeJS
+-Variables de entorno (se incluye el .env en el repositorio ya que es un challenge y no hay datos sensibles)
+### Instalacion
 ```bash
-$ npm install
+$ docker-compose up -d
 ```
+Este comando levantara 2 contenedores
+1: NodeJS API
+2: MsSQL
 
-## Compile and run the project
+Para comprobar que el proyecto esta corriendo correctamente, se puede consumir el endpoint "health" 
 
+### Uso de la API
+La api cuenta con 2 endpoints:
+
+#### Health check: /health 
+Se encarga de dar informacion acerca de la salud del servidor, incluye detalles de uso de memoria y procesos activos
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+curl http://localhost:3000/plan-it/pi/v1/health
 ```
-
-## Run tests
-
+#### Procesar archivo de clientes: /client/batch
+Se encarga de procesar el archivo de clientes y guardarlos en la base de datos.
+Posee tolerancia a errores en lineas corruptas del archivo, ignorandolas y continuando con el resto.
+Recibe el path del archivo como parametro
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+curl -X POST http://localhost:3000/plant-it/api/v1/client/batch \
+  -H "Content-Type: application/json" \
+  -d '{"filePath": "/usr/src/app/data/clients.dat"}'
 ```
+### Decisiones tecnicas
+#### Procesamiento por lotes (batch)
+Los lotes son de X registros (configurable). Se realizo de esta manera para evitar saturar la DB con un gran volumen de datos.
+Ademas se utilizo un strategy pattern para ofrecer flexibilidad y escalabilidad en caso de que se requieran procesar otro tipo de archivos
+#### Lectura del archivo con streams
+Se utilizo readline interface con streams para leer el archivo de forma eficiente y no tener que cargar todo el archivo en memoria
+#### Validacion de input
+-Se uso un middleware(nestjs pipeline) para validar la extension y ruta del archivo a cargar (por falta de tiempo no se agrego validacion para que los archivos pertenezcan unicamente a una ruta permitida)
+-Se validaron los campos del archivo para definir si eran lineas validas o corruptas
+#### Optimizaciones
+- Se implemento una llamada al garbage collector para liberar memoria en el procesamiento de archivos
+- Se inserto indices estrategicos para la entidad de clientes
+- Se inserto en base de datos por lotes evitando duplicados
+#### Mejoras para produccion
+- Se podria escalar horizontalmente agregando pods replicas y que estos procesen los archivos de forma distribuida
+- Se podria utilizar un servicio de mensajeria por colas como RabbitMQ
+- Optimizar almacenamiento moviendo datos antiguos a cold storage
+- Se podria generar archivos de log para debuggear errores en cada procesamiento de archivo
+- Crear replicas de lectura para mejorar la disponibilidad
+- Crear un sistema de checkpoints para reanudar el procesamiento en caso de falla
+#### Funcionalidades que me hubiese gustado agregar en caso de tener mas tiempo
+- Agregar autenticacion/autorizacion
+- Implementacion de swagger con NestJS
+- Agregar tests unitarios con mocks diversos de datos
+- Agregar una entidad de base de datos para guardar cada evento de procesamiento de archivo con propiedades como: id de batch, fecha, cantidad de lineas procesadas, cantidad de lineas corruptas, etc 
+- Agregar un endpoint para obtener detalles del procesamiento de un archivo
+- Agregar detalles al endpoint de health para obtener detalles del procesamiento de un archivo
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

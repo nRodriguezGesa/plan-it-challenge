@@ -50,8 +50,12 @@ export class EnvConfig {
   @IsString()
   DB_DATABASE: string;
 
+  @Transform(({ value }) => parseInt(String(value)))
+  @IsNumber()
+  MAX_FILE_SIZE_GB: number;
+
   @IsString()
-  MAX_FILE_SIZE: string;
+  FILES_BASE_PATH: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {

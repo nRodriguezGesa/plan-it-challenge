@@ -12,10 +12,14 @@ import {
   getServerUpTime,
 } from 'src/utils/process.utils';
 import { TypedEnvConfig } from 'src/config/typed.env.config';
+import { ClientProcessorService } from 'src/file-processor/clients/clientProcessor.service';
 
 @Injectable()
 export class HealthService {
-  constructor(private readonly envConfig: TypedEnvConfig) {}
+  constructor(
+    private readonly envConfig: TypedEnvConfig,
+    private readonly clientProcessor: ClientProcessorService,
+  ) {}
 
   async getHealth(): Promise<HealthResponse> {
     const cpuUsage = await getServerCPUUsage();
@@ -36,9 +40,8 @@ export class HealthService {
       ? HealthStatus.HEALTHY
       : HealthStatus.UNHEALTHY;
     const processingHealth: ProcessingHealth = {
-      isProcessing: false,
-      activeProcesses: 0,
-    }; //TODO: use real data
+      isProcessing: this.clientProcessor.isProcessing(),
+    };
     return {
       status,
       uptime: `${getServerUpTime()}s`,

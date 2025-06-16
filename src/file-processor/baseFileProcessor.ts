@@ -8,6 +8,7 @@ import {
 import { secondsBetweenDates } from 'src/utils/date.utilts';
 import { MemoryHealth } from 'src/health/health';
 import { FileProcessorStrategy } from './IFileProcessStrategy';
+import { FileProcessingError } from './fileProcessor.exceptions';
 
 export enum FileProcessorStatus {
   IDLE = 'idle',
@@ -32,7 +33,6 @@ export interface FileProcessorMetrics {
 
 @Injectable()
 export abstract class BaseFileProcessor<T> {
-  protected readonly logger = new Logger(this.constructor.name);
   private metrics: FileProcessorMetrics = {
     errorLines: 0,
     processedLines: 0,
@@ -44,7 +44,7 @@ export abstract class BaseFileProcessor<T> {
   constructor(protected readonly strategy: FileProcessorStrategy<T>) {}
 
   async processFile(filePath: string): Promise<FileProcessorMetrics> {
-    this.logger.log(`Processing file: ${filePath}`);
+    Logger.log(`Processing file: ${filePath}`);
     this.metrics = {
       errorLines: 0,
       processedLines: 0,
@@ -65,9 +65,7 @@ export abstract class BaseFileProcessor<T> {
           this.metrics.processedLines++;
         } else {
           this.metrics.errorLines++;
-          this.logger.warn(
-            `Error parsing line ${this.metrics.totalLines}: ${line}`,
-          );
+          Logger.warn(`Error parsing line ${this.metrics.totalLines}: ${line}`);
         }
         if (currentBatch.length >= batchSize) {
           await this.processBatch(currentBatch, ++batchesProcessed);
@@ -80,25 +78,29 @@ export abstract class BaseFileProcessor<T> {
       }
       if (currentBatch.length > 0) {
         await this.processBatch(currentBatch, ++batchesProcessed);
-        this.logger.log(
+        Logger.log(
           `Processed final batch ${batchesProcessed} with ${currentBatch.length} items`,
         );
       }
       this.metrics.status = FileProcessorStatus.COMPLETED;
       this.metrics.endTime = new Date();
       this.metrics.memoryUsage = `${getServerMemoryUsage().heapUsed}MB`;
-
-      this.logger.log(
+      Logger.log(
         `File processing completed successfully. Processed ${batchesProcessed} batches.`,
       );
       this.logFinalStats();
 
       return this.metrics;
-    } catch (error) {
+    } catch (error: unknown) {
       this.metrics.status = FileProcessorStatus.ERROR;
       this.metrics.endTime = new Date();
-      this.logger.error(`File processing failed:`, error);
-      throw new Error(`File processing failed: ${error}`);
+      const message =
+        error instanceof Error ? error.message : 'Unknown processing error';
+      Logger.error(`File processing failed: ${message}`, error);
+      throw new FileProcessingError(
+        `Failed to process file: ${filePath}`,
+        error as Error,
+      );
     }
   }
 
@@ -107,11 +109,11 @@ export abstract class BaseFileProcessor<T> {
     try {
       await this.strategy.processBatch(batch);
       const duration = Date.now() - startTime;
-      this.logger.log(
+      Logger.log(
         `Batch ${batchNumber} processed: ${batch.length} items in ${duration}ms`,
       );
     } catch (error) {
-      this.logger.error(
+      Logger.error(
         `Error processing batch ${batchNumber} of ${batch.length} items: ${error}`,
       );
       throw error;
@@ -169,7 +171,7 @@ export abstract class BaseFileProcessor<T> {
   private logProgress(): void {
     const memory: MemoryHealth = getServerMemoryUsage();
 
-    this.logger.log(
+    Logger.log(
       `Progress: ${this.metrics.processedLines}/${this.metrics.totalLines} lines processed, ` +
         `${this.metrics.errorLines} errors, ` +
         `Heap Usage: ${memory.heapUsed}MB`,
@@ -185,7 +187,7 @@ export abstract class BaseFileProcessor<T> {
       const linesPerSecond = Math.round(
         this.metrics.processedLines / (duration / 1000),
       );
-      this.logger.log(
+      Logger.log(
         `Final Stats: ` +
           `${this.metrics.processedLines} lines processed, ` +
           `${this.metrics.errorLines} errors, ` +
@@ -193,6 +195,6 @@ export abstract class BaseFileProcessor<T> {
           `Speed: ${linesPerSecond} lines/sec`,
       );
     }
-    this.logger.log('Finished File Processing');
+    Logger.log('Finished File Processing');
   }
 }
