@@ -50,9 +50,21 @@ Se encarga de procesar el archivo de clientes y guardarlos en la base de datos.
 Posee tolerancia a errores en lineas corruptas del archivo, ignorandolas y continuando con el resto.
 Recibe el path del archivo como parametro
 ```bash
-curl -X POST http://localhost:3000/plant-it/api/v1/client/batch \
+curl -X POST http://localhost:3000/plan-it/api/v1/client/batch \
   -H "Content-Type: application/json" \
   -d '{"filePath": "/usr/src/app/data/clients.dat"}'
+```
+Ejemplo de respuesta:
+```json
+{
+	"errorLines": 290,
+	"processedLines": 10207,
+	"totalLines": 10497,
+	"startTime": "2025-06-15T20:06:38.765Z",
+	"status": "completed",
+	"memoryUsage": "36MB",
+	"endTime": "2025-06-15T20:06:45.217Z"
+}
 ```
 ### Decisiones tecnicas
 #### Procesamiento por lotes (batch)
